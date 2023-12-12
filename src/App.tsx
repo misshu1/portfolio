@@ -1,13 +1,21 @@
-import { Canvas } from './canvas/Canvas';
-import { drawings } from './canvas/drawings';
+import { useRef } from 'react';
+import { Canvas } from './canvas';
+import { DrawType, drawings } from './drawings';
 
 function App() {
-  const { drawFireflies } = drawings;
+  const imgRef = useRef<HTMLImageElement>(null);
 
   return (
     <>
+      <img
+        src={drawings[DrawType.FIREFLY].src}
+        ref={imgRef}
+        style={{ display: 'none' }} // used inside canvas
+      />
       <Canvas
-        draw={drawFireflies}
+        draw={drawings[DrawType.FIREFLY].draw}
+        reset={drawings[DrawType.FIREFLY].reset}
+        imgRef={imgRef}
         width={window.innerWidth}
         height={window.innerHeight}
       />
