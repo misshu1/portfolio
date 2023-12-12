@@ -24,7 +24,7 @@ class Firefly {
   }
   show() {
     this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, this.s, 0, 2 * Math.PI);
+    this.ctx.arc(this.x, this.y, this.s + 0.2, 0, 2 * Math.PI);
     this.ctx.fillStyle = '#fddba3';
     this.ctx.fill();
   }

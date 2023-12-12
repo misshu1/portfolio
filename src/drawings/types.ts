@@ -4,13 +4,14 @@ export type DrawFunc = (
   frameCount?: number
 ) => void;
 
-export type Drawings = {
-  [key: string]: {
+export type Drawings = Record<
+  (typeof DrawType)[keyof typeof DrawType],
+  {
     draw: DrawFunc;
     src: string;
     reset?: () => void;
-  };
-};
+  }
+>;
 
 export const DrawType = {
   FIREFLY: 'FIREFLY',
