@@ -1,13 +1,10 @@
-import { useTranslation } from 'react-i18next';
+import { FooterStyle } from './Footer.style';
 
 export const Footer = () => {
-  const { t } = useTranslation();
-
   return (
-    <div>
+    <FooterStyle>
       <button>asd</button>
       <button>asd</button>
-      <div>{t('test')}</div>
-    </div>
+    </FooterStyle>
   );
 };

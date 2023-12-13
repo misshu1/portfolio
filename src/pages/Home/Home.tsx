@@ -1,9 +1,10 @@
 import { useRef } from 'react';
-import { Canvas } from './canvas';
-import { DrawType, drawings } from './drawings';
-import { Footer } from './components';
+import { Outlet } from 'react-router-dom';
+import { DrawType, drawings } from '../../drawings';
+import { Canvas } from '../../canvas';
+import { Footer } from '../../components';
 
-function App() {
+export const Home = () => {
   const imgRef = useRef<HTMLImageElement>(null);
 
   return (
@@ -20,9 +21,8 @@ function App() {
         width={window.innerWidth}
         height={window.innerHeight}
       />
+      <Outlet />
       <Footer />
     </>
   );
-}
-
-export default App;
+};
