@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Canvas } from './canvas';
 import { DrawType, drawings } from './drawings';
+import { Footer } from './components';
 
 function App() {
   const imgRef = useRef<HTMLImageElement>(null);
@@ -19,6 +20,7 @@ function App() {
         width={window.innerWidth}
         height={window.innerHeight}
       />
+      <Footer />
     </>
   );
 }
