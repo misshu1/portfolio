@@ -15,4 +15,5 @@ export type Drawings = Record<
 
 export const DrawType = {
   FIREFLY: 'FIREFLY',
+  FIREFLY_DARK: 'FIREFLY_DARK',
 } as const;

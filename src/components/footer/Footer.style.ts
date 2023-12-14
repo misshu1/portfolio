@@ -3,7 +3,7 @@ import styled from 'styled-components';
 export const FooterStyle = styled.footer`
   position: fixed;
   left: 50%;
-  bottom: 5rem;
+  bottom: 3rem;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;

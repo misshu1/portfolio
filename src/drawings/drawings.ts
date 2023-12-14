@@ -8,4 +8,9 @@ export const drawings: Drawings = {
     reset: resetFireflies,
     src: fireflyBG,
   },
+  [DrawType.FIREFLY_DARK]: {
+    draw: (ctx, imgRef) => drawFireflies(ctx, imgRef),
+    reset: resetFireflies,
+    src: fireflyBG,
+  },
 };

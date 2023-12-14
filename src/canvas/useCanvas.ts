@@ -2,18 +2,35 @@ import { useRef, useEffect, RefObject } from 'react';
 import { DrawFunc } from '../drawings';
 import { scaleCanvas } from './utils';
 
-export const useCanvas = (
-  draw: DrawFunc,
-  imgRef: RefObject<HTMLImageElement>,
-  reset?: () => void
-) => {
-  const resezeTime = useRef<number | undefined>();
+export type CanvasOptions = {
+  fps: number;
+  context: '2d'; // Add more if needed
+};
+
+type UseCanvasProps = {
+  draw: DrawFunc;
+  imgRef?: RefObject<HTMLImageElement>;
+  reset?: () => void;
+  options?: Partial<CanvasOptions>;
+};
+
+const defaultOptions: CanvasOptions = {
+  fps: 60,
+  context: '2d',
+};
+
+export const useCanvas = ({ draw, imgRef, reset, options }: UseCanvasProps) => {
+  const canvasOptions = useRef({ ...defaultOptions, ...options });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const resizeTimeOut = useRef<number | undefined>();
+  const lastTime = useRef<number>(0);
+  const nextFrame = useRef<number>(1000 / canvasOptions.current.fps);
+  const timer = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext(canvasOptions.current.context);
     if (!context) return;
     scaleCanvas(canvas, context, window.innerWidth, window.innerHeight);
   }, []);
@@ -21,25 +38,29 @@ export const useCanvas = (
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext(canvasOptions.current.context);
     if (!context) return;
     let frameCount = 0;
     let animationFrameId: number;
 
-    const render = () => {
-      frameCount++;
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-      draw(context, imgRef, frameCount);
-
-      animationFrameId = window.requestAnimationFrame(render);
+    const animate = (timeStamp: number) => {
+      const deltaTime = timeStamp - lastTime.current;
+      lastTime.current = timeStamp;
+      if (timer.current > nextFrame.current) {
+        frameCount++;
+        draw(context, imgRef, frameCount);
+      } else {
+        timer.current += deltaTime;
+      }
+      animationFrameId = window.requestAnimationFrame(animate);
     };
-    render();
+    animate(0);
 
     const handleResize = () => {
       scaleCanvas(canvas, context, window.innerWidth, window.innerHeight);
       if (reset) {
-        clearTimeout(resezeTime.current);
-        resezeTime.current = setTimeout(function () {
+        clearTimeout(resizeTimeOut.current);
+        resizeTimeOut.current = setTimeout(function () {
           reset();
         }, 200);
       }
