@@ -32,13 +32,18 @@ class Firefly {
 
 export const drawFireflies: DrawFunc = (ctx, imgRef) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  //   ctx.fillStyle = 'transparent';
-  //   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   if (imgRef?.current) {
     const image = imgRef.current;
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     convertImage(ctx, image, 'cover');
+    // const ptrn = ctx.createPattern(image, 'repeat');
+    // if (ptrn) ctx.fillStyle = ptrn;
+    // for (let w = 0; w < ctx.canvas.width; w += image.width) {
+    //   for (let h = 0; h < ctx.canvas.height; h += image.width) {
+    //     ctx.drawImage(image, w, h);
+    //   }
+    // }
   }
 
   if (fireflies.length < 100) {

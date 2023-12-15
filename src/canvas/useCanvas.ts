@@ -10,7 +10,7 @@ export type CanvasOptions = {
 type UseCanvasProps = {
   draw: DrawFunc;
   imgRef?: RefObject<HTMLImageElement>;
-  reset?: () => void;
+  reset?: (ctx: CanvasRenderingContext2D) => void;
   options?: Partial<CanvasOptions>;
 };
 
@@ -61,7 +61,7 @@ export const useCanvas = ({ draw, imgRef, reset, options }: UseCanvasProps) => {
       if (reset) {
         clearTimeout(resizeTimeOut.current);
         resizeTimeOut.current = setTimeout(function () {
-          reset();
+          reset(context);
         }, 200);
       }
     };

@@ -9,7 +9,7 @@ export type Drawings = Record<
   {
     draw: DrawFunc;
     src: string;
-    reset?: () => void;
+    reset?: (ctx: CanvasRenderingContext2D) => void;
   }
 >;
 

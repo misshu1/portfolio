@@ -8,7 +8,7 @@ type CanvasProps = DetailedHTMLProps<
 > & {
   draw: DrawFunc;
   imgRef?: RefObject<HTMLImageElement>;
-  reset?: () => void;
+  reset?: (ctx: CanvasRenderingContext2D) => void;
   options?: Partial<CanvasOptions>;
 };
 
