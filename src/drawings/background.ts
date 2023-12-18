@@ -64,19 +64,27 @@ class Cell {
   }
 }
 
+type HoveredCells = {
+  x: number;
+  y: number;
+  timeout: number;
+  start: Date;
+};
+
 class Effect {
   #ctx: CanvasRenderingContext2D;
   #width: number;
   #height: number;
   #imageGrid: Cell[] = [];
-  #timeouts: number[] = [];
-  #colors = ['red', 'orange', 'blue', 'yellow', 'coral', 'pink'];
-  cellWidth: number;
-  cellHeight: number;
+  #colors = ['#FFB067', '#057DCD', '#76B947'];
+  cellWidth: number = 25;
+  cellHeight: number = 25;
+  cellPadding: number = 2;
   imgRef?: RefObject<HTMLImageElement>;
 
   static #initialized = false;
   static #mouseMoveEvent: (e: MouseEvent) => void;
+  static #hoveredCels = new Map<Cell, HoveredCells>([]);
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -85,31 +93,42 @@ class Effect {
     this.#ctx = ctx;
     this.#width = this.#ctx.canvas.width;
     this.#height = this.#ctx.canvas.height;
-    this.cellWidth = 25;
-    this.cellHeight = 25;
-    this.#imageGrid = [];
     this.imgRef = imgRef;
+
+    this.#init(ctx);
+  }
+
+  #init(ctx: CanvasRenderingContext2D) {
     if (!Effect.#initialized) {
       this.#createGrid();
       Effect.#mouseMoveEvent = (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
         for (let index = 0; index < this.#imageGrid.length; index++) {
           const cell = this.#imageGrid[index];
           const [x, y] = cell.getCellId().split('_');
-          const dx = e.x - +x;
-          const dy = e.y - +y;
+          const dx = e.offsetX - +x;
+          const dy = e.offsetY - +y;
           const distance = Math.hypot(dx, dy);
-          if (distance < 25) {
-            const random = Math.floor(Math.random() * 6) + 1;
+          const timeout = Math.floor(Math.random() * 1000);
+
+          if (distance < 10 && !Effect.#hoveredCels.has(cell)) {
+            const random = Math.floor(Math.random() * this.#colors.length);
             ctx.fillStyle = this.#colors[random];
-            ctx.fillRect(+x, +y, this.cellWidth, this.cellHeight);
-            this.#timeouts.push(
-              setTimeout(() => {
-                ctx.clearRect(+x, +y, this.cellWidth, this.cellHeight);
-                cell.draw(ctx);
-              }, 300)
+            ctx.fillRect(
+              +x + this.cellPadding,
+              +y + this.cellPadding,
+              this.cellWidth - this.cellPadding * 2,
+              this.cellHeight - this.cellPadding * 2
             );
+
+            Effect.#hoveredCels.set(cell, {
+              x: +x,
+              y: +y,
+              timeout: timeout,
+              start: new Date(),
+            });
             break;
           }
         }
@@ -138,7 +157,15 @@ class Effect {
     this.#imageGrid.forEach((cell) => {
       cell.draw(ctx);
     });
-    this.#timeouts.forEach((time) => clearTimeout(time));
+    Array.from(Effect.#hoveredCels).forEach(
+      ([cell, { start, timeout, x, y }]) => {
+        if (Date.now() - start.getTime() > timeout) {
+          ctx.clearRect(x, y, this.cellWidth, this.cellHeight);
+          cell.draw(ctx);
+          Effect.#hoveredCels.delete(cell);
+        }
+      }
+    );
   }
 }
 
