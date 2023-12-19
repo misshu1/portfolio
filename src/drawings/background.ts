@@ -5,13 +5,10 @@ class Cell {
   #effect: Effect;
   #x: number;
   #y: number;
-  #width: number;
-  #height: number;
   #imgRef?: RefObject<HTMLImageElement>;
   #cellId: string;
-  #colors = ['#FFB067', '#057DCD', '#76B947'];
-  #currentCellColor: string = '';
-  #cellPadding: number = 2;
+  #currentCellColorIndex: number = 0;
+  #cellPadding: number = 4;
   #cellSize: number;
   #cellSizeWithPadding: number;
 
@@ -19,10 +16,8 @@ class Cell {
     this.#effect = effect;
     this.#x = x;
     this.#y = y;
-    this.#width = this.#effect.cellSize;
-    this.#height = this.#effect.cellSize;
     this.#cellSize = cellSize;
-    this.#cellSizeWithPadding = this.#effect.cellSize - this.#cellPadding * 2;
+    this.#cellSizeWithPadding = cellSize - this.#cellPadding * 2;
     this.#imgRef = this.#effect.imgRef;
     this.#cellId = `${this.#x}_${this.#y}`;
   }
@@ -35,22 +30,22 @@ class Cell {
     if (this.#imgRef?.current) {
       ctx.drawImage(
         this.#imgRef.current,
-        (this.#x / this.#cellSize) % 2 === 0 ? 0 : 25,
-        (this.#y / this.#cellSize) % 2 === 0 ? 0 : 25,
-        this.#width,
-        this.#height,
+        (this.#x / this.#cellSize) % 2 === 0 ? 0 : this.#cellSize,
+        (this.#y / this.#cellSize) % 2 === 0 ? 0 : this.#cellSize,
+        this.#cellSize,
+        this.#cellSize,
         this.#x,
         this.#y,
-        this.#width,
-        this.#height
+        this.#cellSize,
+        this.#cellSize
       );
     }
   }
 
   drawCellColor(ctx: CanvasRenderingContext2D) {
-    const random = Math.floor(Math.random() * this.#colors.length);
-    this.#currentCellColor = this.#colors[random];
-    ctx.fillStyle = this.#currentCellColor;
+    const random = Math.floor(Math.random() * this.#colors().length);
+    this.#currentCellColorIndex = random;
+    ctx.fillStyle = this.#colors()[this.#currentCellColorIndex];
     ctx.fillRect(
       this.#x + this.#cellPadding,
       this.#y + this.#cellPadding,
@@ -61,14 +56,20 @@ class Cell {
 
   removeCellColor(ctx: CanvasRenderingContext2D) {
     ctx.clearRect(this.#x, this.#y, this.#cellSize, this.#cellSize);
-    ctx.globalAlpha = 1;
     this.draw(ctx);
+  }
+
+  #colors(opacity: number = 1) {
+    return [
+      `rgba(255, 176, 103, ${opacity})`,
+      `rgba(5, 125, 205, ${opacity})`,
+      `rgba(118, 185, 71, ${opacity})`,
+    ];
   }
 
   addCellOpacity(ctx: CanvasRenderingContext2D, opacity: number = 1) {
     this.removeCellColor(ctx);
-    ctx.globalAlpha = opacity;
-    ctx.fillStyle = this.#currentCellColor;
+    ctx.fillStyle = this.#colors(opacity)[this.#currentCellColorIndex];
     ctx.fillRect(
       this.#x + this.#cellPadding,
       this.#y + this.#cellPadding,
@@ -88,7 +89,7 @@ class Effect {
   #width: number;
   #height: number;
   #imageGrid: Cell[] = [];
-  cellSize: number = 25;
+  #cellSize: number = 25;
   imgRef?: RefObject<HTMLImageElement>;
   static #initialized = false;
   static #mouseMoveEvent: (e: MouseEvent | TouchEvent) => void;
@@ -148,9 +149,9 @@ class Effect {
   }
 
   #createGrid() {
-    for (let y = 0; y < this.#height; y += this.cellSize) {
-      for (let x = 0; x < this.#width; x += this.cellSize) {
-        this.#imageGrid.push(new Cell(this, x, y, this.cellSize));
+    for (let y = 0; y < this.#height; y += this.#cellSize) {
+      for (let x = 0; x < this.#width; x += this.#cellSize) {
+        this.#imageGrid.push(new Cell(this, x, y, this.#cellSize));
       }
     }
   }
