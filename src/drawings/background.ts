@@ -1,5 +1,5 @@
 import { RefObject } from 'react';
-import { DrawFunc } from '.';
+import { DrawFunc } from './types';
 
 class Cell {
   #effect: Effect;
@@ -7,25 +7,22 @@ class Cell {
   #y: number;
   #width: number;
   #height: number;
-  #cellWidth: number;
-  #cellHeight: number;
   #imgRef?: RefObject<HTMLImageElement>;
   #cellId: string;
+  #colors = ['#FFB067', '#057DCD', '#76B947'];
+  #currentCellColor: string = '';
+  #cellPadding: number = 2;
+  #cellSize: number;
+  #cellSizeWithPadding: number;
 
-  constructor(
-    effect: Effect,
-    x: number,
-    y: number,
-    cellWidth: number,
-    cellHeight: number
-  ) {
+  constructor(effect: Effect, x: number, y: number, cellSize: number) {
     this.#effect = effect;
     this.#x = x;
     this.#y = y;
-    this.#cellWidth = cellWidth;
-    this.#cellHeight = cellHeight;
-    this.#width = this.#effect.cellWidth;
-    this.#height = this.#effect.cellHeight;
+    this.#width = this.#effect.cellSize;
+    this.#height = this.#effect.cellSize;
+    this.#cellSize = cellSize;
+    this.#cellSizeWithPadding = this.#effect.cellSize - this.#cellPadding * 2;
     this.#imgRef = this.#effect.imgRef;
     this.#cellId = `${this.#x}_${this.#y}`;
   }
@@ -36,23 +33,10 @@ class Cell {
 
   draw(ctx: CanvasRenderingContext2D) {
     if (this.#imgRef?.current) {
-      //   ctx.globalAlpha = 1;
-
-      //   ctx.fillStyle = '#16192e';
-      //   ctx.fillRect(150, 300, this.#width, this.#height);
-
-      //   ctx.drawImage(
-      //     this.#imgRef.current,
-      //     this.#x,
-      //     this.#y,
-      //     this.#width,
-      //     this.#height
-      //   );
-
       ctx.drawImage(
         this.#imgRef.current,
-        (this.#x / this.#cellWidth) % 2 === 0 ? 0 : 25,
-        (this.#y / this.#cellHeight) % 2 === 0 ? 0 : 25,
+        (this.#x / this.#cellSize) % 2 === 0 ? 0 : 25,
+        (this.#y / this.#cellSize) % 2 === 0 ? 0 : 25,
         this.#width,
         this.#height,
         this.#x,
@@ -62,11 +46,38 @@ class Cell {
       );
     }
   }
+
+  drawCellColor(ctx: CanvasRenderingContext2D) {
+    const random = Math.floor(Math.random() * this.#colors.length);
+    this.#currentCellColor = this.#colors[random];
+    ctx.fillStyle = this.#currentCellColor;
+    ctx.fillRect(
+      this.#x + this.#cellPadding,
+      this.#y + this.#cellPadding,
+      this.#cellSizeWithPadding,
+      this.#cellSizeWithPadding
+    );
+  }
+
+  removeCellColor(ctx: CanvasRenderingContext2D) {
+    ctx.clearRect(this.#x, this.#y, this.#cellSize, this.#cellSize);
+    this.draw(ctx);
+  }
+
+  addCellOpacity(ctx: CanvasRenderingContext2D, opacity: number = 1) {
+    this.removeCellColor(ctx);
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = this.#currentCellColor;
+    ctx.fillRect(
+      this.#x + this.#cellPadding,
+      this.#y + this.#cellPadding,
+      this.#cellSizeWithPadding,
+      this.#cellSizeWithPadding
+    );
+  }
 }
 
 type HoveredCells = {
-  x: number;
-  y: number;
   timeout: number;
   start: Date;
 };
@@ -76,14 +87,10 @@ class Effect {
   #width: number;
   #height: number;
   #imageGrid: Cell[] = [];
-  #colors = ['#FFB067', '#057DCD', '#76B947'];
-  cellWidth: number = 25;
-  cellHeight: number = 25;
-  cellPadding: number = 2;
+  cellSize: number = 25;
   imgRef?: RefObject<HTMLImageElement>;
-
   static #initialized = false;
-  static #mouseMoveEvent: (e: MouseEvent) => void;
+  static #mouseMoveEvent: (e: MouseEvent | TouchEvent) => void;
   static #hoveredCels = new Map<Cell, HoveredCells>([]);
 
   constructor(
@@ -101,31 +108,31 @@ class Effect {
   #init(ctx: CanvasRenderingContext2D) {
     if (!Effect.#initialized) {
       this.#createGrid();
-      Effect.#mouseMoveEvent = (e: MouseEvent) => {
+      Effect.#mouseMoveEvent = (e: MouseEvent | TouchEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         for (let index = 0; index < this.#imageGrid.length; index++) {
           const cell = this.#imageGrid[index];
           const [x, y] = cell.getCellId().split('_');
-          const dx = e.offsetX - +x;
-          const dy = e.offsetY - +y;
+          let offsetX = 0;
+          let offsetY = 0;
+
+          if ('touches' in e && e.touches.length !== 0) {
+            offsetX = e.touches[0].clientX;
+            offsetY = e.touches[0].clientY;
+          } else if (e instanceof MouseEvent) {
+            offsetX = e.offsetX;
+            offsetY = e.offsetY;
+          }
+          const dx = offsetX - +x;
+          const dy = offsetY - +y;
           const distance = Math.hypot(dx, dy);
           const timeout = Math.floor(Math.random() * 1000);
 
           if (distance < 10 && !Effect.#hoveredCels.has(cell)) {
-            const random = Math.floor(Math.random() * this.#colors.length);
-            ctx.fillStyle = this.#colors[random];
-            ctx.fillRect(
-              +x + this.cellPadding,
-              +y + this.cellPadding,
-              this.cellWidth - this.cellPadding * 2,
-              this.cellHeight - this.cellPadding * 2
-            );
-
+            cell.drawCellColor(ctx);
             Effect.#hoveredCels.set(cell, {
-              x: +x,
-              y: +y,
               timeout: timeout,
               start: new Date(),
             });
@@ -134,16 +141,15 @@ class Effect {
         }
       };
       this.#ctx.canvas.addEventListener('mousemove', Effect.#mouseMoveEvent);
+      this.#ctx.canvas.addEventListener('touchmove', Effect.#mouseMoveEvent);
       Effect.#initialized = true;
     }
   }
 
   #createGrid() {
-    for (let y = 0; y < this.#height; y += this.cellHeight) {
-      for (let x = 0; x < this.#width; x += this.cellWidth) {
-        this.#imageGrid.push(
-          new Cell(this, x, y, this.cellWidth, this.cellHeight)
-        );
+    for (let y = 0; y < this.#height; y += this.cellSize) {
+      for (let x = 0; x < this.#width; x += this.cellSize) {
+        this.#imageGrid.push(new Cell(this, x, y, this.cellSize));
       }
     }
   }
@@ -151,21 +157,23 @@ class Effect {
   reset() {
     Effect.#initialized = false;
     this.#ctx.canvas.removeEventListener('mousemove', Effect.#mouseMoveEvent);
+    this.#ctx.canvas.removeEventListener('touchmove', Effect.#mouseMoveEvent);
   }
 
   render(ctx: CanvasRenderingContext2D) {
     this.#imageGrid.forEach((cell) => {
       cell.draw(ctx);
     });
-    Array.from(Effect.#hoveredCels).forEach(
-      ([cell, { start, timeout, x, y }]) => {
-        if (Date.now() - start.getTime() > timeout) {
-          ctx.clearRect(x, y, this.cellWidth, this.cellHeight);
-          cell.draw(ctx);
-          Effect.#hoveredCels.delete(cell);
-        }
+    Array.from(Effect.#hoveredCels).forEach(([cell, { start, timeout }]) => {
+      if (Date.now() - start.getTime() > timeout) {
+        cell.removeCellColor(ctx);
+        Effect.#hoveredCels.delete(cell);
+      } else {
+        const value = Math.floor((Date.now() - start.getTime()) / 100);
+        const opacity = Math.abs(value - 10) / 10;
+        cell.addCellOpacity(ctx, opacity);
       }
-    );
+    });
   }
 }
 
