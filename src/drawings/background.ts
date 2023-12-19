@@ -65,7 +65,7 @@ class Cell {
   }
 
   addCellOpacity(ctx: CanvasRenderingContext2D, opacity: number = 1) {
-    this.removeCellColor(ctx);
+    ctx.clearRect(this.#x, this.#y, this.#cellSize, this.#cellSize);
     ctx.globalAlpha = opacity;
     ctx.fillStyle = this.#currentCellColor;
     ctx.fillRect(
