@@ -61,6 +61,7 @@ class Cell {
 
   removeCellColor(ctx: CanvasRenderingContext2D) {
     ctx.clearRect(this.#x, this.#y, this.#cellSize, this.#cellSize);
+    ctx.globalAlpha = 1;
     this.draw(ctx);
   }
 
